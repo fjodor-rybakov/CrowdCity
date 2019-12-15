@@ -51,6 +51,6 @@ public class Move : MonoBehaviour
         if (!Input.GetMouseButtonDown(0)) return;
         var ray = mainCamera.ScreenPointToRay(Input.mousePosition);
         if (!Physics.Raycast(ray, out var hit, 1000.0f)) return;
-        _agent.SetDestination(new Vector3(hit.point.x, 0, hit.point.z));
+        _agent.SetDestination(new Vector3(hit.point.x, hit.point.y, hit.point.z));
     }
 }

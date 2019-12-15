@@ -21,11 +21,14 @@ public class GameService
         for (var i = 0; i < group.transform.childCount; i++)
         {
             var item = group.transform.GetChild(i);
-            var pos = item.transform.position;
+            var transform = item.transform;
+            var pos = transform.position;
+            var rot = transform.rotation.eulerAngles;
             data.Add(new Coords{
                 X = pos.x.ToString(CultureInfo.InvariantCulture),
                 Y = pos.y.ToString(CultureInfo.InvariantCulture),
-                Z = pos.z.ToString(CultureInfo.InvariantCulture)
+                Z = pos.z.ToString(CultureInfo.InvariantCulture),
+                RotY = rot.y.ToString(CultureInfo.InvariantCulture)
             });
         }
 

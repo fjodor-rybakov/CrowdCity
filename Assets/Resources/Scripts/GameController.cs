@@ -30,6 +30,7 @@ public class GameController : MonoBehaviour
     private const string ConnectedPlayerEvent = "connectedPlayer";
     private const string ExistAnotherPlayerEvent = "existAnotherPlayer";
     private const string NpcEvent = "npc";
+    private const string OpenEvent = "open";
 
     // Start is called before the first frame update
     void Start()
@@ -48,6 +49,7 @@ public class GameController : MonoBehaviour
         _socket = go.GetComponent<SocketIOComponent>();
         _gameService = new GameService(_socket);
 
+        _socket.On(OpenEvent, OpenHandler);
         _socket.On(PlayerEvent, HandlePlayer);
         _socket.On(ConnectedPlayerEvent, HandleOpen);
         _socket.On(ExistAnotherPlayerEvent, HandleExistAnotherPlayer);
@@ -63,10 +65,10 @@ public class GameController : MonoBehaviour
         StartCoroutine("ExecuteEvents");
     }
 
-    private GameObject GenerateObjectOnTerrain(Transform objectParentTransform, Vector3 coords)
+    private GameObject GenerateObjectOnTerrain(Transform objectParentTransform, Vector3 positionCoords, Quaternion rotationCoords)
     {
         //Generate the Prefab on the generated position
-        var objInstance = Instantiate(npcPrefab, coords, Quaternion.identity);
+        var objInstance = Instantiate(npcPrefab, positionCoords, rotationCoords);
         objInstance.transform.SetParent(objectParentTransform);
         return objInstance;
     }
@@ -100,9 +102,9 @@ public class GameController : MonoBehaviour
     private void AddNpcList()
     {
         if (npcList.transform.childCount < countMinNpc)
-            GenerateObjectOnTerrain(npcList.transform, CreateNpcPosition());
+            GenerateObjectOnTerrain(npcList.transform, CreateNpcPosition(), Quaternion.Euler(0, 0, 0));
     }
-    
+
     private void HandlePlayer(SocketIOEvent e)
     {
         if (e.data == null) { return; }
@@ -110,11 +112,13 @@ public class GameController : MonoBehaviour
         var item = _otherPlayers.First(sp => sp.transform.name == result.id);
         for (var i = 0; i < result.data.Count; i++)
         {
-            var coords = result.data.ElementAt(i); 
-            item.transform.GetChild(i).transform.position = Helper.ParseCoords(coords);
+            var coords = result.data.ElementAt(i);
+            var coordsPos = Helper.ParseCoordsPos(coords);
+            var coordsRot = Quaternion.Euler(0, Helper.ParseCoordsRot(coords).y, 0);
+            item.transform.GetChild(i).transform.SetPositionAndRotation(coordsPos, coordsRot);
             if (result.data.Count > item.transform.childCount)
             {
-                GenerateObjectOnTerrain(item.transform, Helper.ParseCoords(coords));
+                GenerateObjectOnTerrain(item.transform, Helper.ParseCoordsPos(coords), Quaternion.Euler(0, 0, 0));
             }
         }
     }
@@ -126,7 +130,7 @@ public class GameController : MonoBehaviour
         var result = JsonConvert.DeserializeObject<UserData>(e.data.ToString());
         var newPlayer = new GameObject(result.id);
         newPlayer.transform.SetParent(field.transform);
-        GenerateObjectOnTerrain(newPlayer.transform, new Vector3(0, yOffset, 0));
+        GenerateObjectOnTerrain(newPlayer.transform, new Vector3(0, yOffset, 0), Quaternion.Euler(0, 0, 0));
         _otherPlayers.Add(newPlayer);
     }
 
@@ -141,9 +145,14 @@ public class GameController : MonoBehaviour
         {
             var newPlayer = new GameObject(result.data.ElementAt(i));
             newPlayer.transform.SetParent(field.transform);
-            GenerateObjectOnTerrain(newPlayer.transform, new Vector3(0, yOffset, 0));
+            GenerateObjectOnTerrain(newPlayer.transform, new Vector3(0, yOffset, 0), Quaternion.Euler(0, 0, 0));
             _otherPlayers.Add(newPlayer);
         }
+    }
+
+    private void OpenHandler(SocketIOEvent e)
+    {
+        Debug.Log("[SocketIO] Connection was established: " + e.name + " " + e.data);
     }
 
     private void HandleNpc(SocketIOEvent e)
@@ -155,7 +164,7 @@ public class GameController : MonoBehaviour
             var coords = result.data.ElementAt(i);
             if (result.data.Count > npcList.transform.childCount)
             {
-                GenerateObjectOnTerrain(npcList.transform, Helper.ParseCoords(coords));
+                GenerateObjectOnTerrain(npcList.transform, Helper.ParseCoordsPos(coords), Quaternion.Euler(0, 0, 0));
             }
         }
     }
