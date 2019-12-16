@@ -1,5 +1,4 @@
 ﻿using System.Collections;
-using System.Globalization;
 using System.Linq;
 using Boo.Lang;
 using Helpers;
@@ -13,9 +12,15 @@ public class GameController : MonoBehaviour
     public Terrain terrain;
     public GameObject npcPrefab;
     public float yOffset = 0.5f;
+    public float yOffsetCounter = 7.24f;
     public int countMinNpc = 3;
     public GameObject field;
     public GameObject groupParent;
+    public Camera mainCamera;
+    public GroupCounter groupCounter;
+    private readonly List<GameObject> _otherPlayers = new List<GameObject>();
+
+    public string clientId;
 
     private float _terrainWidth;
     private float _terrainLength;
@@ -23,7 +28,6 @@ public class GameController : MonoBehaviour
     private float _xTerrainPos;
     private float _zTerrainPos;
     private SocketIOComponent _socket;
-    private readonly List<GameObject> _otherPlayers = new List<GameObject>();
     private GameService _gameService;
 
     private const string PlayerEvent = "player";
@@ -31,6 +35,7 @@ public class GameController : MonoBehaviour
     private const string ExistAnotherPlayerEvent = "existAnotherPlayer";
     private const string NpcEvent = "npc";
     private const string OpenEvent = "open";
+    private const string GetGroupCoordsEvent = "getGroupCoords";
 
     // Start is called before the first frame update
     void Start()
@@ -130,7 +135,11 @@ public class GameController : MonoBehaviour
         var result = JsonConvert.DeserializeObject<UserData>(e.data.ToString());
         var newPlayer = new GameObject(result.id);
         newPlayer.transform.SetParent(field.transform);
-        GenerateObjectOnTerrain(newPlayer.transform, new Vector3(0, yOffset, 0), Quaternion.Euler(0, 0, 0));
+        GenerateObjectOnTerrain(newPlayer.transform, new Vector3(0, yOffsetCounter, 0), Quaternion.Euler(0, 0, 0));
+        var playerGroupCounter = Instantiate(groupCounter, newPlayer.transform.GetChild(0));
+        playerGroupCounter.gameController = this;
+        playerGroupCounter.group = newPlayer;
+        playerGroupCounter.mainCamera = mainCamera;
         _otherPlayers.Add(newPlayer);
     }
 
@@ -146,6 +155,10 @@ public class GameController : MonoBehaviour
             var newPlayer = new GameObject(result.data.ElementAt(i));
             newPlayer.transform.SetParent(field.transform);
             GenerateObjectOnTerrain(newPlayer.transform, new Vector3(0, yOffset, 0), Quaternion.Euler(0, 0, 0));
+            var playerGroupCounter = Instantiate(groupCounter, newPlayer.transform.GetChild(0));
+            playerGroupCounter.gameController = this;
+            playerGroupCounter.group = newPlayer;
+            playerGroupCounter.mainCamera = mainCamera;
             _otherPlayers.Add(newPlayer);
         }
     }
@@ -153,6 +166,8 @@ public class GameController : MonoBehaviour
     private void OpenHandler(SocketIOEvent e)
     {
         Debug.Log("[SocketIO] Connection was established: " + e.name + " " + e.data);
+        var result = JsonConvert.DeserializeObject<UserData>(e.data.ToString());
+        clientId = result.id;
     }
 
     private void HandleNpc(SocketIOEvent e)

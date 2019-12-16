@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 238916229759857183}
   - component: {fileID: 238916229759857182}
   - component: {fileID: 238916229759857177}
-  - component: {fileID: 238916229759857181}
+  - component: {fileID: 8683069265850717250}
   m_Layer: 0
   m_Name: GroupCounter
   m_TagString: Untagged
@@ -204,7 +204,7 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   m_maskType: 0
---- !u!114 &238916229759857181
+--- !u!114 &8683069265850717250
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -213,8 +213,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 238916229759857179}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 122b11230e9f327489c72daa23d599db, type: 3}
+  m_Script: {fileID: 11500000, guid: c49a9ae49319ce649bec06d3b3ef61c5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   mainCamera: {fileID: 0}
   group: {fileID: 0}
+  gameController: {fileID: 0}

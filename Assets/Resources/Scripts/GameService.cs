@@ -13,7 +13,7 @@ public class GameService
     {
         _socket = socket;
     }
-    
+
     public void SendCoords(string eventName, GameObject group)
     {
         if (group.transform.childCount <= 0) return;
@@ -24,7 +24,8 @@ public class GameService
             var transform = item.transform;
             var pos = transform.position;
             var rot = transform.rotation.eulerAngles;
-            data.Add(new Coords{
+            data.Add(new Coords
+            {
                 X = pos.x.ToString(CultureInfo.InvariantCulture),
                 Y = pos.y.ToString(CultureInfo.InvariantCulture),
                 Z = pos.z.ToString(CultureInfo.InvariantCulture),
@@ -33,7 +34,7 @@ public class GameService
         }
 
         var serializeData = JsonConvert.SerializeObject(new {data});
-        _socket.Emit( eventName, new JSONObject(serializeData));
+        _socket.Emit(eventName, new JSONObject(serializeData));
     }
 
     public void ExistPlayer(string eventName)

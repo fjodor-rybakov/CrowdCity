@@ -17,7 +17,7 @@ public class TimerUI : MonoBehaviour
     {
         if(isActive) targetTime -= Time.deltaTime;
         if (targetTime <= 0) return;
-
+    
         _counterText.text = $"{targetTime:00}";
     }
 }

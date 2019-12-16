@@ -7,6 +7,7 @@ public class Move : MonoBehaviour
     public GameObject npcList;
     public int triggeredDistance = 2;
     public GameObject groupParent;
+    public WinChecker winChecker;
     
     private NavMeshAgent _agent;
 
@@ -44,11 +45,12 @@ public class Move : MonoBehaviour
         moveSComponent.mainCamera = mainCamera;
         moveSComponent.npcList = npcList;
         moveSComponent.groupParent = groupParent;
+        moveSComponent.winChecker = winChecker;
     }
 
     private void MoveToLocation()
     {
-        if (!Input.GetMouseButtonDown(0)) return;
+        if (!Input.GetMouseButtonDown(0) || !winChecker.isMove) return;
         var ray = mainCamera.ScreenPointToRay(Input.mousePosition);
         if (!Physics.Raycast(ray, out var hit, 1000.0f)) return;
         _agent.SetDestination(new Vector3(hit.point.x, hit.point.y, hit.point.z));
