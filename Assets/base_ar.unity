@@ -741,15 +741,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 010d39cbd03ee4c99a746c1f8ecdc0d8, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -1.3556448
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 010d39cbd03ee4c99a746c1f8ecdc0d8, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -6.1628647
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 010d39cbd03ee4c99a746c1f8ecdc0d8, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -1.8812824
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 010d39cbd03ee4c99a746c1f8ecdc0d8, type: 3}
       propertyPath: m_LocalRotation.x
@@ -787,6 +787,10 @@ PrefabInstance:
       propertyPath: url
       value: ws://fish-crowd.herokuapp.com/socket.io/?EIO=4&transport=websocket
       objectReference: {fileID: 0}
+    - target: {fileID: 11400000, guid: 010d39cbd03ee4c99a746c1f8ecdc0d8, type: 3}
+      propertyPath: autoConnect
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 010d39cbd03ee4c99a746c1f8ecdc0d8, type: 3}
 --- !u!1 &1309522057 stripped
@@ -814,10 +818,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   mainCamera: {fileID: 1332172134}
-  npcList: {fileID: 1688167632}
   triggeredDistance: 2
   groupParent: {fileID: 1678804804}
   winChecker: {fileID: 7843970633908512096}
+  gameController: {fileID: 1994841819}
 --- !u!195 &1309522060
 NavMeshAgent:
   m_ObjectHideFlags: 0
@@ -1165,7 +1169,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1994841817}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -1.3556448, y: -6.1628647, z: -1.8812824}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 7843970632504627883}
@@ -1195,7 +1199,12 @@ MonoBehaviour:
   mainCamera: {fileID: 1332172134}
   groupCounter: {fileID: 8683069265850717250, guid: 2cc23b67728fce444bb4384052d97cfe,
     type: 3}
+  fishRedMat: {fileID: 2100000, guid: 1b31b257d6dd37044a17f61def483455, type: 2}
+  fishYellowMat: {fileID: 2100000, guid: cbb35f83bedc75f4687ef89bc0f0691a, type: 2}
+  fishGreenMat: {fileID: 2100000, guid: 22c6855c83b25f44788f8642db184617, type: 2}
+  fishBlueMat: {fileID: 2100000, guid: 41566cc80d10a0e40b60f44c1748b054, type: 2}
   clientId: 
+  color: 
 --- !u!1 &7843970632504627880
 GameObject:
   m_ObjectHideFlags: 0
@@ -1220,7 +1229,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7843970632504627880}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1.3556448, y: 6.1628647, z: 1.8812824}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 1994841818}
@@ -1237,7 +1246,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7843970633908512095}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -1.3556448, y: -6.1628647, z: -1.8812824}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 7843970632504627883}
