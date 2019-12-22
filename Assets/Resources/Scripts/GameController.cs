@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Globalization;
 using System.Linq;
 using Boo.Lang;
 using Helpers;
@@ -18,9 +19,15 @@ public class GameController : MonoBehaviour
     public GameObject groupParent;
     public Camera mainCamera;
     public GroupCounter groupCounter;
+    public Material fishRedMat;
+    public Material fishYellowMat;
+    public Material fishGreenMat;
+    public Material fishBlueMat;
+
     private readonly List<GameObject> _otherPlayers = new List<GameObject>();
 
     public string clientId;
+    public string color;
 
     private float _terrainWidth;
     private float _terrainLength;
@@ -35,7 +42,6 @@ public class GameController : MonoBehaviour
     private const string ExistAnotherPlayerEvent = "existAnotherPlayer";
     private const string NpcEvent = "npc";
     private const string OpenEvent = "open";
-    private const string GetGroupCoordsEvent = "getGroupCoords";
 
     // Start is called before the first frame update
     void Start()
@@ -49,7 +55,7 @@ public class GameController : MonoBehaviour
         var position = terrain.transform.position;
         _xTerrainPos = position.x;
         _zTerrainPos = position.z;
-        
+
         GameObject go = GameObject.Find("SocketIO");
         _socket = go.GetComponent<SocketIOComponent>();
         _gameService = new GameService(_socket);
@@ -59,10 +65,10 @@ public class GameController : MonoBehaviour
         _socket.On(ConnectedPlayerEvent, HandleOpen);
         _socket.On(ExistAnotherPlayerEvent, HandleExistAnotherPlayer);
         /*_socket.On(NpcEvent, HandleNpc);*/
-        
+
         StartCoroutine("ExistExecuteEvents");
     }
-    
+
     // Update is called once per frame
     void Update()
     {
@@ -70,7 +76,8 @@ public class GameController : MonoBehaviour
         StartCoroutine("ExecuteEvents");
     }
 
-    private GameObject GenerateObjectOnTerrain(Transform objectParentTransform, Vector3 positionCoords, Quaternion rotationCoords)
+    private GameObject GenerateObjectOnTerrain(Transform objectParentTransform, Vector3 positionCoords,
+        Quaternion rotationCoords)
     {
         //Generate the Prefab on the generated position
         var objInstance = Instantiate(npcPrefab, positionCoords, rotationCoords);
@@ -95,7 +102,7 @@ public class GameController : MonoBehaviour
         yield return new WaitForSeconds(1);
         _gameService.ExistPlayer(ExistAnotherPlayerEvent);
     }
-    
+
     private IEnumerator ExecuteEvents()
     {
         _gameService.SendCoords(PlayerEvent, groupParent);
@@ -112,7 +119,11 @@ public class GameController : MonoBehaviour
 
     private void HandlePlayer(SocketIOEvent e)
     {
-        if (e.data == null) { return; }
+        if (e.data == null)
+        {
+            return;
+        }
+
         var result = JsonConvert.DeserializeObject<ResponseData>(e.data.ToString());
         var item = _otherPlayers.First(sp => sp.transform.name == result.id);
         for (var i = 0; i < result.data.Count; i++)
@@ -121,6 +132,8 @@ public class GameController : MonoBehaviour
             var coordsPos = Helper.ParseCoordsPos(coords);
             var coordsRot = Quaternion.Euler(0, Helper.ParseCoordsRot(coords).y, 0);
             item.transform.GetChild(i).transform.SetPositionAndRotation(coordsPos, coordsRot);
+            var parentMat = item.transform.GetChild(0).GetChild(0).GetComponentInChildren<Renderer>().material;
+            item.transform.GetChild(i).transform.GetChild(0).GetComponentInChildren<Renderer>().material = parentMat;
             if (result.data.Count > item.transform.childCount)
             {
                 GenerateObjectOnTerrain(item.transform, Helper.ParseCoordsPos(coords), Quaternion.Euler(0, 0, 0));
@@ -131,11 +144,18 @@ public class GameController : MonoBehaviour
     private void HandleOpen(SocketIOEvent e)
     {
         Debug.Log("[SocketIO] Open received: " + e.name + " " + e.data);
-        if (e.data == null) { return; }
-        var result = JsonConvert.DeserializeObject<UserData>(e.data.ToString());
+        if (e.data == null)
+        {
+            return;
+        }
+
+        var result = JsonConvert.DeserializeObject<FullUserData>(e.data.ToString());
         var newPlayer = new GameObject(result.id);
         newPlayer.transform.SetParent(field.transform);
+        Debug.Log(SelectMaterialByName(result.color));
         GenerateObjectOnTerrain(newPlayer.transform, new Vector3(0, yOffsetCounter, 0), Quaternion.Euler(0, 0, 0));
+        newPlayer.transform.GetChild(0).transform.GetChild(0).GetComponentInChildren<Renderer>().material =
+            SelectMaterialByName(result.color);
         var playerGroupCounter = Instantiate(groupCounter, newPlayer.transform.GetChild(0));
         playerGroupCounter.gameController = this;
         playerGroupCounter.group = newPlayer;
@@ -146,15 +166,25 @@ public class GameController : MonoBehaviour
     private void HandleExistAnotherPlayer(SocketIOEvent e)
     {
         Debug.Log("[SocketIO] Exist users: " + e.name + " " + e.data);
-        if (e.data == null) { return; }
+        if (e.data == null)
+        {
+            return;
+        }
+
         var result = JsonConvert.DeserializeObject<ExistUserData>(e.data.ToString());
-        if (result.data.Count == 0) { return; }
+        if (result.data.Count == 0)
+        {
+            return;
+        }
 
         for (var i = 0; i < result.data.Count; i++)
         {
-            var newPlayer = new GameObject(result.data.ElementAt(i));
+            var playerRawData = result.data.ElementAt(i);
+            var newPlayer = new GameObject(playerRawData.id);
             newPlayer.transform.SetParent(field.transform);
             GenerateObjectOnTerrain(newPlayer.transform, new Vector3(0, yOffset, 0), Quaternion.Euler(0, 0, 0));
+            newPlayer.transform.GetChild(0).transform.GetChild(0).GetComponentInChildren<Renderer>().material =
+                SelectMaterialByName(playerRawData.color);
             var playerGroupCounter = Instantiate(groupCounter, newPlayer.transform.GetChild(0));
             playerGroupCounter.gameController = this;
             playerGroupCounter.group = newPlayer;
@@ -166,21 +196,43 @@ public class GameController : MonoBehaviour
     private void OpenHandler(SocketIOEvent e)
     {
         Debug.Log("[SocketIO] Connection was established: " + e.name + " " + e.data);
-        var result = JsonConvert.DeserializeObject<UserData>(e.data.ToString());
+        var result = JsonConvert.DeserializeObject<FullUserData>(e.data.ToString());
         clientId = result.id;
+        color = result.color;
+        groupParent.transform.GetChild(0).transform.GetChild(0).GetComponentInChildren<Renderer>().material =
+            SelectMaterialByName(color);
     }
 
     private void HandleNpc(SocketIOEvent e)
     {
-        if (e.data == null) { return; }
+        if (e.data == null)
+        {
+            return;
+        }
+
         var result = JsonConvert.DeserializeObject<ResponseData>(e.data.ToString());
-        for (var i = 0; i < result.data.Count; i++)
+        var countNpc = result.data.Count - npcList.transform.childCount;
+        for (var i = 0; i < countNpc; i++)
         {
             var coords = result.data.ElementAt(i);
-            if (result.data.Count > npcList.transform.childCount)
-            {
-                GenerateObjectOnTerrain(npcList.transform, Helper.ParseCoordsPos(coords), Quaternion.Euler(0, 0, 0));
-            }
+            GenerateObjectOnTerrain(npcList.transform, Helper.ParseCoordsPos(coords), Quaternion.Euler(0, 0, 0));
         }
+    }
+
+    public Material SelectMaterialByName(string materialName)
+    {
+        switch (materialName)
+        {
+            case "fish-red-mat":
+                return fishRedMat;
+            case "fish-yellow-mat":
+                return fishYellowMat;
+            case "fish-green-mat":
+                return fishGreenMat;
+            case "fish-blue-mat":
+                return fishBlueMat;
+        }
+
+        return null;
     }
 }

@@ -24,12 +24,12 @@ public class GroupCounter : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        transform.LookAt(mainCamera.transform);
-        transform.localScale = new Vector3(-1, 1, 1);
-        _text.text = group.transform.childCount.ToString();
-        if (group.transform.childCount == _currentCount) return;
-        _currentCount = group.transform.childCount;
-        SendGroupCount(SetGroupCountEvent, _currentCount);
+        Transform transform1;
+        (transform1 = transform).LookAt(mainCamera.transform);
+        transform1.localScale = new Vector3(-1, 1, 1);
+        var childCount = @group.transform.childCount;
+        _text.text = childCount.ToString();
+        SendGroupCount(SetGroupCountEvent, childCount);
     }
 
     private void SendGroupCount(string eventName, int count)

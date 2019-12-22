@@ -4,11 +4,11 @@ using UnityEngine.AI;
 public class Move : MonoBehaviour
 {
     public Camera mainCamera;
-    public GameObject npcList;
     public int triggeredDistance = 2;
     public GameObject groupParent;
     public WinChecker winChecker;
-    
+    public GameController gameController;
+
     private NavMeshAgent _agent;
 
     // Start is called before the first frame update
@@ -26,13 +26,20 @@ public class Move : MonoBehaviour
 
     private void Grouping()
     {
-        for (var i = 0; i < npcList.transform.childCount; i++)
+        for (var i = 0; i < gameController.npcList.transform.childCount; i++)
         {
-            var item = npcList.transform.GetChild(i);
+            var item = gameController.npcList.transform.GetChild(i);
             var distance = Vector3.Distance(item.position, _agent.transform.position);
             if (!(distance <= triggeredDistance)) continue;
             AddToGroup(ref item);
         }
+        /*for (var i = 0; i < gameController.npcaList.transform.childCount; i++)
+        {
+            var item = gameController.npcaList.transform.GetChild(i);
+            var distance = Vector3.Distance(item.position, _agent.transform.position);
+            if (!(distance <= triggeredDistance)) continue;
+            AddToGroup(ref item);
+        }*/
     }
 
     private void AddToGroup(ref Transform item)
@@ -43,9 +50,10 @@ public class Move : MonoBehaviour
         agentComponent.acceleration = 10;
         var moveSComponent = item.transform.gameObject.AddComponent<Move>();
         moveSComponent.mainCamera = mainCamera;
-        moveSComponent.npcList = npcList;
+        moveSComponent.gameController = gameController;
         moveSComponent.groupParent = groupParent;
         moveSComponent.winChecker = winChecker;
+        item.transform.GetChild(0).transform.GetChild(0).GetComponentInChildren<Renderer>().material = gameController.SelectMaterialByName(gameController.color);
     }
 
     private void MoveToLocation()

@@ -1,9 +1,9 @@
-﻿using Boo.Lang;
+﻿﻿using Boo.Lang;
 
 namespace Helpers
 {
     public class ExistUserData
     {
-        public List<string> data;
+        public List<ClientData> data;
     }
 }

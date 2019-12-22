@@ -53,6 +53,7 @@ public class WinChecker : MonoBehaviour
 
     public void BackToMenu()
     {
+        _socket.Close();
         SceneManager.LoadScene("menu_ar", LoadSceneMode.Single);
     }
 }

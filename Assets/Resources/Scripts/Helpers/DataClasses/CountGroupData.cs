@@ -1,4 +1,4 @@
-﻿namespace Helpers
+﻿﻿namespace Helpers
 {
     public class CoordsGroupData : UserData
     {
