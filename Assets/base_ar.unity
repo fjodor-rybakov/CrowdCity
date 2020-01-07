@@ -1368,7 +1368,7 @@ MonoBehaviour:
     type: 3}
   yOffset: 0.5
   yOffsetCounter: 7.24
-  countMinNpc: 3
+  countMinNpc: 50
   field: {fileID: 1539369385}
   groupParent: {fileID: 1678804804}
   mainCamera: {fileID: 1332172134}
