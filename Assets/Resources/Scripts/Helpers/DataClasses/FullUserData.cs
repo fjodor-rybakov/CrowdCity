@@ -1,7 +1,7 @@
-﻿﻿namespace Helpers
+﻿namespace Helpers
 {
     public class FullUserData : UserData
     {
-        public string color;
+        public string color { get; set; }
     }
 }

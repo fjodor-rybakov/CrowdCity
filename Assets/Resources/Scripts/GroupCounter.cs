@@ -11,7 +11,6 @@ public class GroupCounter : MonoBehaviour
 
     private SocketIOComponent _socket;
     private TextMeshPro _text;
-    private int _currentCount = 1;
     private const string SetGroupCountEvent = "setCountGroup";
 
     private void Start()
@@ -27,8 +26,12 @@ public class GroupCounter : MonoBehaviour
         Transform transform1;
         (transform1 = transform).LookAt(mainCamera.transform);
         transform1.localScale = new Vector3(-1, 1, 1);
-        var childCount = @group.transform.childCount;
+        var childCount = group.transform.childCount;
         _text.text = childCount.ToString();
+        if (group.name != "Group")
+        {
+            return;
+        }
         SendGroupCount(SetGroupCountEvent, childCount);
     }
 

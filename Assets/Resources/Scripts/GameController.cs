@@ -6,6 +6,7 @@ using Helpers;
 using Newtonsoft.Json;
 using SocketIO;
 using UnityEngine;
+using UnityEngine.AI;
 
 public class GameController : MonoBehaviour
 {
@@ -23,8 +24,9 @@ public class GameController : MonoBehaviour
     public Material fishYellowMat;
     public Material fishGreenMat;
     public Material fishBlueMat;
+    public WinChecker winChecker;
 
-    private readonly List<GameObject> _otherPlayers = new List<GameObject>();
+    public readonly List<GameObject> otherPlayers = new List<GameObject>();
 
     public string clientId;
     public string color;
@@ -36,6 +38,7 @@ public class GameController : MonoBehaviour
     private float _zTerrainPos;
     private SocketIOComponent _socket;
     private GameService _gameService;
+    private GameObject selfNpcList;
 
     private const string PlayerEvent = "player";
     private const string ConnectedPlayerEvent = "connectedPlayer";
@@ -65,6 +68,7 @@ public class GameController : MonoBehaviour
         _socket.On(ConnectedPlayerEvent, HandleOpen);
         _socket.On(ExistAnotherPlayerEvent, HandleExistAnotherPlayer);
         /*_socket.On(NpcEvent, HandleNpc);*/
+        _socket.On("expand", HandleExpand);
 
         StartCoroutine("ExistExecuteEvents");
     }
@@ -107,14 +111,33 @@ public class GameController : MonoBehaviour
     {
         _gameService.SendCoords(PlayerEvent, groupParent);
         yield return new WaitForSeconds(1);
-        /*_gameService.SendCoords(NpcEvent, npcList);
+        /*_gameService.SendCoords(NpcEvent, selfNpcList);
         yield return new WaitForSeconds(1);*/
+    }
+
+    public void ExpandPlayer(string toClintId)
+    {
+        var sendData = JsonConvert.SerializeObject(new {toClintId});
+        StartCoroutine("ExpandPlayerCoroutine", sendData);
+    }
+
+    private IEnumerator ExpandPlayerCoroutine(string sendData)
+    {
+        _socket.Emit("expand", new JSONObject(sendData));
+        yield return new WaitForSeconds(1);
     }
 
     private void AddNpcList()
     {
-        if (npcList.transform.childCount < countMinNpc)
-            GenerateObjectOnTerrain(npcList.transform, CreateNpcPosition(), Quaternion.Euler(0, 0, 0));
+        if (clientId == "")
+        {
+            return;
+        }
+
+        if (selfNpcList.transform.childCount < countMinNpc)
+        {
+            GenerateObjectOnTerrain(selfNpcList.transform, CreateNpcPosition(), Quaternion.Euler(0, 0, 0));
+        }
     }
 
     private void HandlePlayer(SocketIOEvent e)
@@ -125,7 +148,7 @@ public class GameController : MonoBehaviour
         }
 
         var result = JsonConvert.DeserializeObject<ResponseData>(e.data.ToString());
-        var item = _otherPlayers.First(sp => sp.transform.name == result.id);
+        var item = otherPlayers.First(sp => sp.transform.name == result.id);
         for (var i = 0; i < result.data.Count; i++)
         {
             var coords = result.data.ElementAt(i);
@@ -149,18 +172,8 @@ public class GameController : MonoBehaviour
             return;
         }
 
-        var result = JsonConvert.DeserializeObject<FullUserData>(e.data.ToString());
-        var newPlayer = new GameObject(result.id);
-        newPlayer.transform.SetParent(field.transform);
-        Debug.Log(SelectMaterialByName(result.color));
-        GenerateObjectOnTerrain(newPlayer.transform, new Vector3(0, yOffsetCounter, 0), Quaternion.Euler(0, 0, 0));
-        newPlayer.transform.GetChild(0).transform.GetChild(0).GetComponentInChildren<Renderer>().material =
-            SelectMaterialByName(result.color);
-        var playerGroupCounter = Instantiate(groupCounter, newPlayer.transform.GetChild(0));
-        playerGroupCounter.gameController = this;
-        playerGroupCounter.group = newPlayer;
-        playerGroupCounter.mainCamera = mainCamera;
-        _otherPlayers.Add(newPlayer);
+        var result = JsonConvert.DeserializeObject<ClientData>(e.data.ToString());
+        AddPlayer(result);
     }
 
     private void HandleExistAnotherPlayer(SocketIOEvent e)
@@ -172,35 +185,43 @@ public class GameController : MonoBehaviour
         }
 
         var result = JsonConvert.DeserializeObject<ExistUserData>(e.data.ToString());
-        if (result.data.Count == 0)
-        {
-            return;
-        }
-
         for (var i = 0; i < result.data.Count; i++)
         {
             var playerRawData = result.data.ElementAt(i);
-            var newPlayer = new GameObject(playerRawData.id);
-            newPlayer.transform.SetParent(field.transform);
-            GenerateObjectOnTerrain(newPlayer.transform, new Vector3(0, yOffset, 0), Quaternion.Euler(0, 0, 0));
-            newPlayer.transform.GetChild(0).transform.GetChild(0).GetComponentInChildren<Renderer>().material =
-                SelectMaterialByName(playerRawData.color);
-            var playerGroupCounter = Instantiate(groupCounter, newPlayer.transform.GetChild(0));
-            playerGroupCounter.gameController = this;
-            playerGroupCounter.group = newPlayer;
-            playerGroupCounter.mainCamera = mainCamera;
-            _otherPlayers.Add(newPlayer);
+            AddPlayer(playerRawData);
         }
+    }
+
+    private void AddPlayer(ClientData result)
+    {
+        var newPlayer = new GameObject(result.id);
+        newPlayer.transform.SetParent(field.transform);
+        GenerateObjectOnTerrain(newPlayer.transform, new Vector3(0, yOffset, 0), Quaternion.Euler(0, 0, 0));
+        newPlayer.transform.GetChild(0).transform.GetChild(0).GetComponentInChildren<Renderer>().material =
+            SelectMaterialByName(result.color);
+        var playerGroupCounter = Instantiate(groupCounter, newPlayer.transform.GetChild(0));
+        playerGroupCounter.gameController = this;
+        playerGroupCounter.group = newPlayer;
+        playerGroupCounter.mainCamera = mainCamera;
+        otherPlayers.Add(newPlayer);
+        AddPlayerNpcList(result.id);
     }
 
     private void OpenHandler(SocketIOEvent e)
     {
         Debug.Log("[SocketIO] Connection was established: " + e.name + " " + e.data);
         var result = JsonConvert.DeserializeObject<FullUserData>(e.data.ToString());
+        AddPlayerNpcList(result.id);
         clientId = result.id;
         color = result.color;
         groupParent.transform.GetChild(0).transform.GetChild(0).GetComponentInChildren<Renderer>().material =
             SelectMaterialByName(color);
+    }
+
+    private void AddPlayerNpcList(string id)
+    {
+        selfNpcList = new GameObject(id);
+        selfNpcList.transform.SetParent(npcList.transform);
     }
 
     private void HandleNpc(SocketIOEvent e)
@@ -211,12 +232,72 @@ public class GameController : MonoBehaviour
         }
 
         var result = JsonConvert.DeserializeObject<ResponseData>(e.data.ToString());
-        var countNpc = result.data.Count - npcList.transform.childCount;
-        for (var i = 0; i < countNpc; i++)
+        var playerNpcList = npcList.transform.Find(result.id);
+        /*// var countNpc = result.data.Count - npcList.transform.childCount;
+        for (var i = 0; i < playerNpcList.childCount; i++)
         {
             var coords = result.data.ElementAt(i);
-            GenerateObjectOnTerrain(npcList.transform, Helper.ParseCoordsPos(coords), Quaternion.Euler(0, 0, 0));
+            if (result.data.Count > playerNpcList.childCount)
+            {
+                GenerateObjectOnTerrain(playerNpcList.transform, Helper.ParseCoordsPos(coords), Quaternion.Euler(0, 0, 0));
+            }
+        }*/
+        if (playerNpcList.transform.childCount > 3) return;
+        foreach (var item in result.data)
+        {
+            GenerateObjectOnTerrain(playerNpcList.transform, Helper.ParseCoordsPos(item), Quaternion.Euler(0, 0, 0));
         }
+    }
+    
+    private void HandleExpand(SocketIOEvent e)
+    {
+        if (e.data == null)
+        {
+            return;
+        }
+        var deserializeObjectData = JsonConvert.DeserializeObject<ExpandData>(e.data.ToString());
+        var toPlayer = otherPlayers.FirstOrDefault(player => player.name == deserializeObjectData.to.clientId);
+        if (toPlayer == null)
+        {
+            return;
+        }
+
+        if (deserializeObjectData.from.isExpand == false && deserializeObjectData.to.isExpand == false)
+        {
+            return;
+        }
+        if (deserializeObjectData.from.isExpand && clientId == deserializeObjectData.from.clientId) // Если нас больше
+        {
+            // Убиваем игрока
+            Debug.Log("Expand player");
+            var item = toPlayer.transform.GetChild(toPlayer.transform.childCount - 1);
+            if (item.GetComponentInChildren<GroupCounter>())
+            {
+                Destroy(item.GetComponentInChildren<GroupCounter>().gameObject);
+            }
+            AddToGroup(ref item, groupParent.transform, new ExtendsProperties{groupParent = groupParent, mainCamera = mainCamera, winChecker = winChecker});
+            Destroy(toPlayer.transform.GetChild(toPlayer.transform.childCount - 1).gameObject);
+        }
+        else if (deserializeObjectData.from.isExpand == false && clientId == deserializeObjectData.from.clientId) // Если нас меньше
+        {
+            // Мы проиграли
+            Debug.Log("You lose!");
+            winChecker.timer.targetTime = 0;
+        }
+    }
+    
+    public void AddToGroup(ref Transform item, Transform transformPatent, ExtendsProperties extendsProperties)
+    {
+        item.transform.SetParent(transformPatent);
+        var agentComponent = item.transform.gameObject.AddComponent<NavMeshAgent>();
+        agentComponent.speed = 8;
+        agentComponent.acceleration = 10;
+        var moveSComponent = item.transform.gameObject.AddComponent<Move>();
+        moveSComponent.mainCamera = extendsProperties.mainCamera;
+        moveSComponent.gameController = this;
+        moveSComponent.groupParent = extendsProperties.groupParent;
+        moveSComponent.winChecker = extendsProperties.winChecker;
+        item.transform.GetChild(0).transform.GetChild(0).GetComponentInChildren<Renderer>().material = SelectMaterialByName(color);
     }
 
     public Material SelectMaterialByName(string materialName)

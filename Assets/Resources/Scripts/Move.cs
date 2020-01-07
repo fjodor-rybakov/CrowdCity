@@ -1,4 +1,8 @@
-﻿using UnityEngine;
+﻿using System.Linq;
+using Helpers;
+using Newtonsoft.Json;
+using SocketIO;
+using UnityEngine;
 using UnityEngine.AI;
 
 public class Move : MonoBehaviour
@@ -10,11 +14,14 @@ public class Move : MonoBehaviour
     public GameController gameController;
 
     private NavMeshAgent _agent;
+    private SocketIOComponent _socket;
 
     // Start is called before the first frame update
     void Start()
     {
         _agent = GetComponent<NavMeshAgent>();
+        GameObject go = GameObject.Find("SocketIO");
+        _socket = go.GetComponent<SocketIOComponent>();
     }
 
     // Update is called once per frame
@@ -26,34 +33,39 @@ public class Move : MonoBehaviour
 
     private void Grouping()
     {
-        for (var i = 0; i < gameController.npcList.transform.childCount; i++)
-        {
-            var item = gameController.npcList.transform.GetChild(i);
-            var distance = Vector3.Distance(item.position, _agent.transform.position);
-            if (!(distance <= triggeredDistance)) continue;
-            AddToGroup(ref item);
-        }
-        /*for (var i = 0; i < gameController.npcaList.transform.childCount; i++)
-        {
-            var item = gameController.npcaList.transform.GetChild(i);
-            var distance = Vector3.Distance(item.position, _agent.transform.position);
-            if (!(distance <= triggeredDistance)) continue;
-            AddToGroup(ref item);
-        }*/
+        FromNpc();
+        FromPlayer();
     }
 
-    private void AddToGroup(ref Transform item)
+    private void FromNpc()
     {
-        item.transform.SetParent(groupParent.transform);
-        var agentComponent = item.transform.gameObject.AddComponent<NavMeshAgent>();
-        agentComponent.speed = 8;
-        agentComponent.acceleration = 10;
-        var moveSComponent = item.transform.gameObject.AddComponent<Move>();
-        moveSComponent.mainCamera = mainCamera;
-        moveSComponent.gameController = gameController;
-        moveSComponent.groupParent = groupParent;
-        moveSComponent.winChecker = winChecker;
-        item.transform.GetChild(0).transform.GetChild(0).GetComponentInChildren<Renderer>().material = gameController.SelectMaterialByName(gameController.color);
+        for (var i = 0; i < gameController.npcList.transform.childCount; i++)
+        {
+            for (var j = 0; j < gameController.npcList.transform.GetChild(i).childCount; j++)
+            {
+                var item = gameController.npcList.transform.GetChild(i).GetChild(j);
+                var distance = Vector3.Distance(item.position, _agent.transform.position);
+                if (!(distance <= triggeredDistance)) continue;
+                gameController.AddToGroup(ref item, groupParent.transform, new ExtendsProperties{groupParent = groupParent, mainCamera = mainCamera, winChecker = winChecker});
+            }
+        }
+    }
+
+    private void FromPlayer()
+    {
+        foreach (var player in gameController.otherPlayers)
+        {
+            for (var j = 0; j < player.transform.childCount; j++)
+            {
+                var item = player.transform.GetChild(j);
+                var distance = Vector3.Distance(item.position, _agent.transform.position);
+                if (!(distance <= triggeredDistance)) continue;
+                var toClintId = player.name;
+                //Debug.Log(toClintId);
+                gameController.ExpandPlayer(toClintId);
+                // AddToGroup(ref item);
+            }
+        }
     }
 
     private void MoveToLocation()

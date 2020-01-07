@@ -1,9 +1,9 @@
-﻿﻿namespace Helpers
+﻿namespace Helpers
 {
     public class ClientData
     {
-        public string id;
+        public string id { get; set; }
 
-        public string color;
+        public string color { get; set; }
     }
 }
