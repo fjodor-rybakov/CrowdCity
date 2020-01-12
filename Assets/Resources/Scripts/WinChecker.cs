@@ -44,11 +44,18 @@ public class WinChecker : MonoBehaviour
         }
 
         var result = JsonConvert.DeserializeObject<GroupData>(e.data.ToString());
+        
         var data = result.data.Sort((i1, i2) => i1.count > i2.count ? 1 : 0);
-        _textTable.text = string.Concat(data.Select(item => $"{item.id} {item.count}\n"));
+        _textTable.text = "Игра окончена:\n" + string.Concat(data.Select(item => $"{item.name} {item.count}\n"));
         resultTable.SetActive(true);
         buttonBackMenu.SetActive(true);
         isMove = false;
+    }
+
+    public void SetText(string text)
+    {
+        _textTable.text = text;
+        resultTable.SetActive(true);
     }
 
     public void BackToMenu()

@@ -5,6 +5,7 @@ using Boo.Lang;
 using Helpers;
 using Newtonsoft.Json;
 using SocketIO;
+using TMPro;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -45,6 +46,8 @@ public class GameController : MonoBehaviour
     private const string ExistAnotherPlayerEvent = "existAnotherPlayer";
     private const string NpcEvent = "npc";
     private const string OpenEvent = "open";
+    private const string SetNameEvent = "setName";
+    private TextMeshProUGUI _textTable;
 
     // Start is called before the first frame update
     void Start()
@@ -63,6 +66,7 @@ public class GameController : MonoBehaviour
         _socket = go.GetComponent<SocketIOComponent>();
         _gameService = new GameService(_socket);
 
+        SetNameHandler();
         _socket.On(OpenEvent, OpenHandler);
         _socket.On(PlayerEvent, HandlePlayer);
         _socket.On(ConnectedPlayerEvent, HandleOpen);
@@ -78,6 +82,14 @@ public class GameController : MonoBehaviour
     {
         AddNpcList();
         StartCoroutine("ExecuteEvents");
+    }
+
+    private void SetNameHandler()
+    {
+        var userName = PlayerPrefs.GetString("name");
+            //winChecker.SetText(userName);
+        var serializeJson = JsonConvert.SerializeObject(new {name = userName});
+        _socket.Emit(SetNameEvent, new JSONObject(serializeJson));
     }
 
     private GameObject GenerateObjectOnTerrain(Transform objectParentTransform, Vector3 positionCoords,
